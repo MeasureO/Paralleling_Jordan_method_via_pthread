@@ -6,10 +6,11 @@
 void jordan_solver(int size,
                                   Matrix matrix,
                                   std::vector<double> b,
-                                  std::vector<double> * answer)
+                                  std::vector<double> * answer,
+                                  pthread_mutex_t* mutex)
 {
-    std::vector<int> swap_memory;
-    std::vector<double> x;
+    std::vector<int> swap_memory(size);
+    std::vector<double> x(size);
     for (int i = 0; i < size; i++)
     {
         int row_max = matrix.maxElem(matrix.getSize() - i).first;

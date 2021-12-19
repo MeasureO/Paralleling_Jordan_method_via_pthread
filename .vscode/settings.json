@@ -49,5 +49,6 @@
         "iomanip": "cpp",
         "chrono": "cpp",
         "ratio": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Enabled"
 }

@@ -11,24 +11,28 @@
 struct pthread_argument {
     int size;
     Matrix* matrix;
-    std::vector<double> b;
-    std::vector<double> * x;
+    std::vector<double>* b;
+    std::vector<double>* x;
+    int* maxElementI;
+    int* maxElementJ;
     int pthread_index;
-    // mutex Mutex;
+    pthread_mutex_t* mutex;
 };
 
 void *pthread_func(void* pointer) {
     pthread_mutex_t mutex;
     pthread_argument* pa = (pthread_argument*) pointer;
+    pthread_mutex_lock(pa->mutex);
     // ЗАЛОЧЬ ТУТ МЬЮТЕКСчё
-    pthread_mutex_init(&mutex, NULL);
+   // pthread_mutex_init(&mutex, NULL);
     if (pa->pthread_index == 0) {
         // НАДО ПЕРЕПИСАТЬ jordan_solver ТАК ЧТОБ ОНА ОТВЕТ НЕ ВОЗВРАЩАЛА, А ЗАПИСЫВАЛА
         // В ПЕРЕМЕННУЮ КОТОРУЮ ПО УКАЗАТЕЛЮ ПОДАЛИ В КОНЕЦ. ТО ЕСТЬ ДОБАВИТЬ АРГУМЕНТ ФУНКЦИИ
-        jordan_solver(pa->size, *pa->matrix, pa->b, pa->x);
+        jordan_solver(pa->size, *(pa->matrix), *(pa->b), pa->x, pa -> mutex);
     }
-    pthread_mutex_destroy(&mutex);
+    pthread_mutex_unlock(pa -> mutex);
     // разлочь ТУТ МЬЮТЕКС
+    return nullptr;
 }
 
 int main(int argc, char **argv)
@@ -65,6 +69,11 @@ int main(int argc, char **argv)
     x.resize(atoi(argv[1]));
     // int number_of_pthread -- получить с клавиатуры
     int number_of_pthread = 4;
+    pthread_t Pthreads[number_of_pthread];
+    pthread_argument arguments[number_of_pthread];
+    pthread_mutex_t Mutex;
+    pthread_mutex_init(&Mutex, NULL);
+    int maxElementI, maxElementJ;
     //freopen("CON","w",stdout);
     // std::cout << matrix;
     // std::cout << "----------------------------------------------------------------" << std::endl;
@@ -92,9 +101,9 @@ int main(int argc, char **argv)
     //std::vector<double> solution = jordan_solver(atoi(argv[1]), matrix, matrix._b, x);
 
 
-    pthread_t Pthreads[number_of_pthread];
     for (int i = 0; i < number_of_pthread; ++i) {
-        pthread_create(&Pthreads[i], NULL, &pthread_func, NULL);
+        arguments[i] = {atoi(argv[1]), &matrix, &matrix._b, &x, &maxElementI, &maxElementJ, i, &Mutex};
+        pthread_create(&Pthreads[i], NULL, &pthread_func, &(arguments[i]));
     }
 
     //std::vector<double> solution = jordan_solver(atoi(argv[1]), matrix, matrix._b, x);
