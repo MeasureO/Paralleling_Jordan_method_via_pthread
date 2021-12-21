@@ -38,7 +38,7 @@ void* pthread_func(void* pointer) {
     if (pa->pthread_index == 0) {
         // НАДО ПЕРЕПИСАТЬ jordan_solver ТАК ЧТОБ ОНА ОТВЕТ НЕ ВОЗВРАЩАЛА, А ЗАПИСЫВАЛА
         // В ПЕРЕМЕННУЮ КОТОРУЮ ПО УКАЗАТЕЛЮ ПОДАЛИ В КОНЕЦ. ТО ЕСТЬ ДОБАВИТЬ АРГУМЕНТ ФУНКЦИИ
-        jordan_solver(pa->size, *(pa->matrix), *(pa->b), pa->x, pa->mutex);
+        jordan_solver(pa->size, pa->matrix, pa->b, pa->x, pa->mutex, pa -> pthread_index, pa -> maxElementI, pa -> maxElementJ);
     }
     pthread_mutex_unlock(pa->mutex);
     // разлочь ТУТ МЬЮТЕКС

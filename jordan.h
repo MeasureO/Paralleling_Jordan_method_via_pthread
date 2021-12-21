@@ -4,11 +4,13 @@
 #include "matrix.h"
 #include <vector>
 void jordan_solver(int size,
-                                  Matrix matrix,
-                                  std::vector<double> b,
+                                  Matrix* matrix_ptr,
+                                  std::vector<double>* b_ptr,
                                   std::vector<double> * answer,
-                                  pthread_mutex_t* mutex)
+                                  pthread_mutex_t* mutex, int pthread_index, int* max_i, int* max_j)
 {
+    Matrix &matrix = *matrix_ptr;
+    std::vector<double> &b = *b_ptr;
     std::vector<int> swap_memory(size);
     std::vector<double> x(size);
     for (int i = 0; i < size; i++)
