@@ -19,18 +19,28 @@ struct pthread_argument {
     pthread_mutex_t* mutex;
 };
 
-void *pthread_func(void* pointer) {
-    pthread_mutex_t mutex;
+/*
+lock
+if (== 0) {
+    НАЙТИ МАКС ЭЛЕМЕНТ
+    *maxElementI = maxi;
+    *.. = ...;
+}
+unlock
+ВСЕ НИТИ ИСПОЛЬЗУЮТ ЭТИ КООРДИНАТЫ
+*/
+
+void* pthread_func(void* pointer) {
     pthread_argument* pa = (pthread_argument*) pointer;
     pthread_mutex_lock(pa->mutex);
+    //pthread_mutex_lock((*pa).mutex); // аналогично
     // ЗАЛОЧЬ ТУТ МЬЮТЕКСчё
-   // pthread_mutex_init(&mutex, NULL);
     if (pa->pthread_index == 0) {
         // НАДО ПЕРЕПИСАТЬ jordan_solver ТАК ЧТОБ ОНА ОТВЕТ НЕ ВОЗВРАЩАЛА, А ЗАПИСЫВАЛА
         // В ПЕРЕМЕННУЮ КОТОРУЮ ПО УКАЗАТЕЛЮ ПОДАЛИ В КОНЕЦ. ТО ЕСТЬ ДОБАВИТЬ АРГУМЕНТ ФУНКЦИИ
-        jordan_solver(pa->size, *(pa->matrix), *(pa->b), pa->x, pa -> mutex);
+        jordan_solver(pa->size, *(pa->matrix), *(pa->b), pa->x, pa->mutex);
     }
-    pthread_mutex_unlock(pa -> mutex);
+    pthread_mutex_unlock(pa->mutex);
     // разлочь ТУТ МЬЮТЕКС
     return nullptr;
 }
@@ -69,11 +79,6 @@ int main(int argc, char **argv)
     x.resize(atoi(argv[1]));
     // int number_of_pthread -- получить с клавиатуры
     int number_of_pthread = 4;
-    pthread_t Pthreads[number_of_pthread];
-    pthread_argument arguments[number_of_pthread];
-    pthread_mutex_t Mutex;
-    pthread_mutex_init(&Mutex, NULL);
-    int maxElementI, maxElementJ;
     //freopen("CON","w",stdout);
     // std::cout << matrix;
     // std::cout << "----------------------------------------------------------------" << std::endl;
@@ -101,69 +106,77 @@ int main(int argc, char **argv)
     //std::vector<double> solution = jordan_solver(atoi(argv[1]), matrix, matrix._b, x);
 
 
+    pthread_t Pthreads[number_of_pthread];
+    pthread_argument arguments[number_of_pthread];
+    pthread_mutex_t Mutex;
+    pthread_mutex_init(&Mutex, NULL);
+    int maxElementI, maxElementJ;
+
     for (int i = 0; i < number_of_pthread; ++i) {
         arguments[i] = {atoi(argv[1]), &matrix, &matrix._b, &x, &maxElementI, &maxElementJ, i, &Mutex};
-        pthread_create(&Pthreads[i], NULL, &pthread_func, &(arguments[i]));
+        pthread_create(&(Pthreads[i]), NULL, &pthread_func, &(arguments[i]));
     }
 
-    //std::vector<double> solution = jordan_solver(atoi(argv[1]), matrix, matrix._b, x);
+    //std::vector<double> solution = jordan_solver(atoi(argv[1]), matrix, matrix._b, x); НЕ НУЖНАЯ СТРОКА
 
     for (int i = 0; i < number_of_pthread; ++i) {
         pthread_join(Pthreads[i], NULL);
     }
+    pthread_mutex_destroy(&Mutex);
 
 
     end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end - start;
-    // std::vector<double> exact_solution;
-    // exact_solution.resize(atoi(argv[1]));
-    // for (int i = 0; i < atoi(argv[1]); i += 2)
-    // {
-    //     exact_solution[i] = 1;
-    // }
-    // std::vector<double> residual(atoi(argv[1]));
-    // for (int i = 0; i < atoi(argv[1]); i++)
-    // {
-    //     residual[i] = matrix._b[i];
-    // }
-    // for (int i = 0; i < atoi(argv[1]); i++)
-    // {
-    //     for (int j = 0; j < atoi(argv[1]); j++)
-    //     {
-    //         residual[i] -= matrix(i, j) * solution[j];
-    //     }
-    // }
-    // double b_norm = 0;
-    // double residual_norm = 0;
-    // for (double x : matrix._b)
-    // {
-    //     b_norm += x * x;
-    // }
-    // b_norm = sqrt(b_norm);
-    // for (double y : residual)
-    // {
-    //     residual_norm += y * y;
-    // }
-    // residual_norm = sqrt(residual_norm);
-    // for(int i = 0; i < atoi(argv[2]); i++)
-    // {
-    //     std::cout << std::scientific << solution[i] << " "; 
-    // }
-    // std::cout << std::endl;
-    // std::cout << "Норма невязки = " << std::scientific << residual_norm / b_norm << std::endl;
-    // std::vector<double> error(atoi(argv[1]));
-    // for (int i = 0; i < atoi(argv[1]); i++)
-    // {
-    //     error[i] = solution[i] - exact_solution[i];
-    // }
-    // double error_norm = 0;
-    // for (double z : error)
-    // {
-    //     error_norm += z * z;
-    // }
-    // error_norm = sqrt(error_norm);
-    // std::cout << "Норма погрешности = " << std::scientific << error_norm << std::endl;
-    // std::cout << "Время решения системы = " << elapsed_seconds.count() << std::endl;
-    // //cout << matrix;
+     std::vector<double> exact_solution;
+     exact_solution.resize(atoi(argv[1]));
+     for (int i = 0; i < atoi(argv[1]); i += 2)
+     {
+         exact_solution[i] = 1;
+     }
+     std::vector<double> residual(atoi(argv[1]));
+     for (int i = 0; i < atoi(argv[1]); i++)
+     {
+         residual[i] = matrix._b[i];
+     }
+     for (int i = 0; i < atoi(argv[1]); i++)
+     {
+         for (int j = 0; j < atoi(argv[1]); j++)
+         {
+             residual[i] -= matrix(i, j) * x[j];
+         }
+     }
+     double b_norm = 0;
+     double residual_norm = 0;
+     for (double X : matrix._b)
+     {
+         b_norm += X * X;
+     }
+     b_norm = sqrt(b_norm);
+     for (double y : residual)
+     {
+         residual_norm += y * y;
+     }
+     residual_norm = sqrt(residual_norm);
+     for(int i = 0; i < atoi(argv[2]); i++)
+     {
+         std::cout << std::scientific << x[i] << " "; 
+     }
+     std::cout << std::endl;
+     std::cout << "Норма невязки = " << std::scientific << residual_norm / b_norm << std::endl;
+     std::vector<double> error(atoi(argv[1]));
+     for (int i = 0; i < atoi(argv[1]); i++)
+     {
+         error[i] = x[i] - exact_solution[i];
+     }
+     double error_norm = 0;
+     for (double z : error)
+     {
+         error_norm += z * z;
+     }
+     error_norm = sqrt(error_norm);
+     std::cout << "Норма погрешности = " << std::scientific << error_norm << std::endl;
+     std::cout << "Время решения системы = " << elapsed_seconds.count() << std::endl;
+     //std::cout << matrix;
+     //print_matrix(matrix, atoi(argv[1]), atoi(argv[1]));
     return 0;
 }
