@@ -20,6 +20,7 @@ struct pthread_argument {
     pthread_mutex_t* mutex;
     sem_t* semaphore;
     int number_of_thread;
+    pthread_barrier_t* barr;
 };
 
 
@@ -31,7 +32,7 @@ void* pthread_func(void* pointer) {
     // ЗАЛОЧЬ ТУТ МЬЮТЕКСч
         // НАДО ПЕРЕПИСАТЬ jordan_solver ТАК ЧТОБ ОНА ОТВЕТ НЕ ВОЗВРАЩАЛА, А ЗАПИСЫВАЛА
         // В ПЕРЕМЕННУЮ КОТОРУЮ ПО УКАЗАТЕЛЮ ПОДАЛИ В КОНЕЦ. ТО ЕСТЬ ДОБАВИТЬ АРГУМЕНТ ФУНКЦИИ
-    jordan_solver(pa->size, pa->matrix, pa->b, pa->x, pa->mutex, pa -> semaphore, pa -> pthread_index, pa -> maxElementI, pa -> maxElementJ, pa -> number_of_thread);
+    jordan_solver(pa->size, pa->matrix, pa->b, pa->x, pa->mutex, pa -> semaphore, pa -> pthread_index, pa -> maxElementI, pa -> maxElementJ, pa -> number_of_thread, pa -> barr);
     
     //pthread_mutex_unlock(pa->mutex);
     // разлочь ТУТ МЬЮТЕКС
@@ -103,12 +104,14 @@ int main(int argc, char **argv)
     pthread_argument arguments[number_of_pthread];
     pthread_mutex_t Mutex;
     sem_t semaphore;
-    sem_init(&semaphore, 0, number_of_pthread);
+    pthread_barrier_t barr;
+    sem_init(&semaphore, 0, 1);
     pthread_mutex_init(&Mutex, NULL);
+    pthread_barrier_init(&barr, NULL, number_of_pthread);
     int maxElementI, maxElementJ;
 
     for (int i = 0; i < number_of_pthread; ++i) {
-        arguments[i] = {atoi(argv[1]), &matrix, &matrix._b, &x, &maxElementI, &maxElementJ, i, &Mutex, &semaphore, number_of_pthread};
+        arguments[i] = {atoi(argv[1]), &matrix, &matrix._b, &x, &maxElementI, &maxElementJ, i, &Mutex, &semaphore, number_of_pthread, &barr};
         pthread_create(&(Pthreads[i]), NULL, &pthread_func, &(arguments[i]));
     }
 
@@ -157,7 +160,7 @@ int main(int argc, char **argv)
      {
          std::cout << std::scientific << x[i] << " "; 
      }
-    std::cout << std::endl;
+     std::cout << std::endl;
      std::cout << "Норма невязки = " << std::scientific << residual_norm / b_norm << std::endl;
      std::vector<double> error(atoi(argv[1]));
      for (int i = 0; i < atoi(argv[1]); i++)
