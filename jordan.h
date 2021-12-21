@@ -3,29 +3,76 @@
 #include <cmath>
 #include "matrix.h"
 #include <vector>
+#include <semaphore.h>
 void jordan_solver(int size,
                                   Matrix* matrix_ptr,
                                   std::vector<double>* b_ptr,
                                   std::vector<double> * answer,
-                                  pthread_mutex_t* mutex, int pthread_index, int* max_i, int* max_j)
+                                  pthread_mutex_t* mutex,
+                                  sem_t* semaphore,
+                                  int pthread_index,
+                                  int* max_i,
+                                  int* max_j,
+                                  int number_of_thread)
 {
     Matrix &matrix = *matrix_ptr;
     std::vector<double> &b = *b_ptr;
     std::vector<int> swap_memory(size);
     std::vector<double> x(size);
+   
+    /* lock
+    if (== 0) {
+        НАЙТИ МАКС ЭЛЕМЕНТ
+        *maxElementI = maxi;
+        *.. = ...;
+    }
+    unlock */
+    
     for (int i = 0; i < size; i++)
     {
-        
-        int row_max = matrix.maxElem(matrix.getSize() - i).first;
-        int col_max = matrix.maxElem(matrix.getSize() - i).second;
+        int row_max, col_max;
+        //std::cout <<pthread_index << "pthread_index" << " ";
+        std::cout << "PTHREAD_INDEX" << pthread_index << '\n';
+        std::cout << '1' << '\n';
+        if (pthread_index == 0)
+        {
+            std::pair<int, int> max =  matrix.maxElem(matrix.getSize() - i);
+            row_max = max.first;
+            col_max = max.second;
+            *max_i = row_max;
+            *max_j = col_max;
+        }
+        sem_wait(semaphore);
+        std::cout << "PTHREAD_INDEX" << pthread_index << '\n';
+        std::cout << '2' << '\n';
+        if (pthread_index != 0)
+        {
+            row_max = *max_i;
+            col_max = *max_j;
+            //continue;
+            //return;
+        }
         //matrix(matrix.maxElem(matrix.getSize()).first, matrix.maxElem(matrix.getSize()).second);
-        matrix.colSwap(i, col_max);
-        swap_memory.push_back(i);
-        swap_memory.push_back(col_max);
-        //std::cout << matrix;
-        //std::cout << "------------------------------" << std::endl;
-        matrix.rowSwap(i, row_max, size - i);
-        matrix.bSwap(i, row_max);
+        if (pthread_index == 0)
+        {
+            matrix.colSwap(i, col_max);
+            swap_memory.push_back(i);
+            swap_memory.push_back(col_max);
+            //std::cout << matrix;
+            //std::cout << "------------------------------" << std::endl;
+            matrix.rowSwap(i, row_max, size - i);
+            matrix.bSwap(i, row_max);
+             double divisor = matrix(i, i);
+            for (int j = 0; j < size; j++)
+            {
+                matrix(i, j) = matrix(i, j) / divisor;
+                //matrix(k, j) -= matrix(i, j) / matrix(i, i) * matrix(k, i);
+            }
+            matrix._b[i] = matrix._b[i] / divisor;
+        }
+        sem_wait(semaphore);
+        std::cout << "PTHREAD_INDEX" << pthread_index << '\n';
+        std::cout << '3' << '\n';
         //std::swap(exact_solution[i], exact_solution[row_max]);
         // for (int i = 0; i < size; i++)
         // {
@@ -34,18 +81,12 @@ void jordan_solver(int size,
 
         // std::cout << matrix;
         // std::cout << "---------------------------------------------------------------" << std::endl;
-        double divisor = matrix(i, i);
-        for (int j = 0; j < size; j++)
-        {
-            matrix(i, j) = matrix(i, j) / divisor;
-            //matrix(k, j) -= matrix(i, j) / matrix(i, i) * matrix(k, i);
-        }
-        matrix._b[i] = matrix._b[i] / divisor;
         // std::cout << matrix;
         // std::cout << "---------------------------------------------------------------" << std::endl;
         double factor;
         //for (int k = i + 1; k < size; k++)
-        for (int k = 0; k < size; k++)
+        for (int k = pthread_index; k < size; k += number_of_thread)
+        {
             if (k != i)
             {
                 {
@@ -60,6 +101,11 @@ void jordan_solver(int size,
                     // std::cout << "---------------------------------------------------------------" << std::endl;
                 }
             }
+        }
+        sem_wait(semaphore);
+        std::cout << "PTHREAD_INDEX" << pthread_index << '\n';
+        std::cout << '4' << '\n';
+        
         // std::cout << matrix;
         // std::cout << "------------------------------" << std::endl;
     }
@@ -76,6 +122,7 @@ void jordan_solver(int size,
     {
         std::swap(x[swap_memory[i]], x[swap_memory[i - 1]]);
     }
+    //sem_wait(semaphore);
     // for (int i = 0; i < size; i++)
     // {
     //     std::cout << x[i] << std::endl;
