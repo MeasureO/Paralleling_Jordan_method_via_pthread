@@ -15,6 +15,7 @@ void jordan_solver(int size,
     std::vector<double> x(size);
     for (int i = 0; i < size; i++)
     {
+        
         int row_max = matrix.maxElem(matrix.getSize() - i).first;
         int col_max = matrix.maxElem(matrix.getSize() - i).second;
         //matrix(matrix.maxElem(matrix.getSize()).first, matrix.maxElem(matrix.getSize()).second);

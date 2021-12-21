@@ -32,15 +32,14 @@ unlock
 
 void* pthread_func(void* pointer) {
     pthread_argument* pa = (pthread_argument*) pointer;
-    pthread_mutex_lock(pa->mutex);
+    //pthread_mutex_lock(pa->mutex);
     //pthread_mutex_lock((*pa).mutex); // аналогично
-    // ЗАЛОЧЬ ТУТ МЬЮТЕКСчё
-    if (pa->pthread_index == 0) {
+    // ЗАЛОЧЬ ТУТ МЬЮТЕКСч
         // НАДО ПЕРЕПИСАТЬ jordan_solver ТАК ЧТОБ ОНА ОТВЕТ НЕ ВОЗВРАЩАЛА, А ЗАПИСЫВАЛА
         // В ПЕРЕМЕННУЮ КОТОРУЮ ПО УКАЗАТЕЛЮ ПОДАЛИ В КОНЕЦ. ТО ЕСТЬ ДОБАВИТЬ АРГУМЕНТ ФУНКЦИИ
-        jordan_solver(pa->size, pa->matrix, pa->b, pa->x, pa->mutex, pa -> pthread_index, pa -> maxElementI, pa -> maxElementJ);
-    }
-    pthread_mutex_unlock(pa->mutex);
+    jordan_solver(pa->size, pa->matrix, pa->b, pa->x, pa->mutex, pa -> pthread_index, pa -> maxElementI, pa -> maxElementJ);
+    
+    //pthread_mutex_unlock(pa->mutex);
     // разлочь ТУТ МЬЮТЕКС
     return nullptr;
 }
